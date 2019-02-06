@@ -6,6 +6,7 @@ from pathlib import Path
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from src.models.baseline import BaselineModel
 from src.utils.load_all_data import get_data, VisualQADataset
@@ -36,11 +37,13 @@ model.to(device)
 
 optimizer = Adam(model.parameters(), 1e-3)
 loss_fn = CrossEntropyLoss()
-
-for questions, answers, image_embs in train_loader:
+#
+for questions, answers, image_embs in tqdm(train_loader):
     optimizer.zero_grad()
     logits = model(questions, image_embs.to(device))
     loss = loss_fn(logits, answers.to(device))
     loss.backward()
     optimizer.step()
     print(loss.item())
+
+torch.save(model.state_dict(), "models/baseline.pth")

@@ -38,6 +38,23 @@ class VisualQADataset(Dataset):
         return ' '.join(question), answer_idx, image
 
 
+class VisualQAValidationDataset(VisualQADataset):
+
+    def __init__(self, qa, preprocessed_images_file, image_filenames, answer_vocabulary):
+        super().__init__(qa, preprocessed_images_file, image_filenames, answer_vocabulary)
+        self.qa.preprocessed_question = self.qa.preprocessed_question.apply(lambda x: ' '.join(x))
+        self.qa_groups = self.qa.groupby(["preprocessed_question", "image_id"]).agg(
+            {'answer': lambda x: ' '.join(x)})
+
+    def __getitem__(self, idx):
+        info = self.qa_groups.iloc[idx]
+        question, image_id = info.name
+        answers = info['answers'].split()
+        answer_idxs = [self.answer_vocabulary[ans] for ans in answers]
+        image = self.preprocessed_imgs[self.image_id_to_index[image_id]]
+        return question, answer_idxs, image
+
+
 class AnswerVocabulary:
     def __init__(self, unique_answers):
         self.answer_to_index = {ans: idx for idx, ans in enumerate(unique_answers)}
@@ -109,7 +126,7 @@ def get_data(raw_data_path: Path,
 
 if __name__ == "__main__":
     qa_data, answers_vocab = get_data(Path(os.environ["RAW_DATA_PATH"]),
-                                   Path(os.environ["PROCESSED_DATA_PATH"]), parts=["train", "val"])
+                                      Path(os.environ["PROCESSED_DATA_PATH"]), parts=["train", "val"])
     datasets, images, filenames = qa_data["train"]
     dataset = VisualQADataset(datasets, image_filenames=filenames, preprocessed_images_file=images)
     features = []
