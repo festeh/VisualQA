@@ -53,20 +53,27 @@ def read_data(data_path: Union[Path, str], data_type='train'):
 
 
 def preprocess_questions_answers(
-        questions: List, annotations: List, max_answers=None, only_one_word_answers=True) -> DataFrame:
+        questions: List,
+        annotations: List,
+        max_answers=None,
+        only_one_word_answers=True,
+        flatten=False) -> DataFrame:
     data = []
     id_to_question = {q['question_id']: q for q in questions}
     for ann in tqdm(annotations):
         question_info = id_to_question[ann['question_id']]
         preprocessed_question = preprocess_text(question_info["question"])
         img_id = question_info["image_id"]
-        for ans in ann["answers"]:
-            if ans["answer_confidence"] != "no":
-                data.append({"question": question_info["question"],
-                             "preprocessed_question": preprocessed_question,
-                             "question_id": question_info["question_id"],
-                             "image_id": img_id,
-                             "answer": ans["answer"]})
+
+        confident_answers = [ans for ans in ann["answers"] if ans["answer_confidence"] != "no"]
+        datum = {"question": question_info["question"],
+                 "preprocessed_question": preprocessed_question,
+                 "question_id": question_info["question_id"],
+                 "image_id": img_id}
+        if not flatten:
+            for ans in confident_answers: data.append({**datum, **{"answer": ans["answer"]}})
+        else:
+            data.append({**datum, **{"answer": [ans["answer"] for ans in confident_answers]}})
     data = DataFrame(data)
 
     # TODO: in future consider all (lost ~200k examples from 2mil)
@@ -84,7 +91,11 @@ def preprocess_questions_answers(
 def process_part_qa_data(data_path: Union[Path, str], data_type='train', max_answers=None):
     logging.info(f"Reading {data_type} data part")
     q, a = read_data(data_path, data_type)
-    return preprocess_questions_answers(q, a, max_answers=max_answers)
+    if data_type == "train":
+        return preprocess_questions_answers(q, a, max_answers=max_answers, flatten=False)
+    else:
+        return preprocess_questions_answers(
+            q, a, max_answers=None, flatten=True, only_one_word_answers=False)
 
 
 def save_qa_data(data, save_data_path, data_type="train"):
