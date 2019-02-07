@@ -35,7 +35,7 @@ class VisualQADataset(Dataset):
         answer = info['answer']
         answer_idx = self.answer_vocabulary[answer]
         image = self.preprocessed_imgs[self.image_id_to_index[info['image_id']]]
-        return ' '.join(question), answer_idx, image
+        return question, answer_idx, image
 
 
 class VisualQAValidationDataset(VisualQADataset):
@@ -111,15 +111,7 @@ def get_data(raw_data_path: Path,
     result = {data_type: [qa_datasets[idx], image_datasets[idx], image_filenames[idx]]
               for idx, data_type in enumerate(parts)}
 
-    if sorted(result.keys()) == ["train", "val"]:
-        train_qa = result["train"][0]
-        val_qa = result["val"][0]
-        possible_answers = train_qa.answer.value_counts()[:max_answers].index
-        result["train"][0] = train_qa[train_qa.answer.isin(possible_answers)]
-        result["val"][0] = val_qa[val_qa.answer.isin(possible_answers)]
-
-    else:
-        possible_answers = qa_datasets[0].answer.value_counts().index
+    possible_answers = qa_datasets[0].answer.value_counts().index
 
     return result, AnswerVocabulary(possible_answers)
 
