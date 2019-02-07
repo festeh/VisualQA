@@ -30,41 +30,41 @@ def read_data(data_path: Union[Path, str], data_type='train'):
 # def filter_data(data, condition=lambda x: True):
 #     return [x for x in data if condition(x)]
 
-def merge_questions_answers(questions: List, answers: List, flatten=False):
-    """Combine questions and answers obtained from `read_data` into single list"""
-    id_to_question = {q['question_id']: q for q in questions}
-    qa_merged = [{**a, **id_to_question[a['question_id']]} for a in answers]
-    if flatten:
-        qa_merged_flat = []
-        for qa in qa_merged:
-            answers = qa.pop('answers')
-            for ans_info in answers:
-                qa_merged_flat.append({
-                    "question": qa["question"],
-                    "preprocessed_question": qa.get("preprocessed_question", ""),
-                    "image_id": qa["image_id"],
-                    "answer": ans_info["answer"],
-                    "preprocessed_answer": ans_info.get("preprocessed_answer", ""),
-                    "confidence": ans_info["answer_confidence"]})
-        return qa_merged_flat
-    return qa_merged
+# def merge_questions_answers(questions: List, answers: List, flatten=False):
+#     """Combine questions and answers obtained from `read_data` into single list"""
+#     id_to_question = {q['question_id']: q for q in questions}
+#     qa_merged = [{**a, **id_to_question[a['question_id']]} for a in answers]
+#     if flatten:
+#         qa_merged_flat = []
+#         for qa in qa_merged:
+#             answers = qa.pop('answers')
+#             for ans_info in answers:
+#                 qa_merged_flat.append({
+#                     "question": qa["question"],
+#                     "preprocessed_question": qa.get("preprocessed_question", ""),
+#                     "image_id": qa["image_id"],
+#                     "answer": ans_info["answer"],
+#                     "preprocessed_answer": ans_info.get("preprocessed_answer", ""),
+#                     "confidence": ans_info["answer_confidence"]})
+#         return qa_merged_flat
+#     return qa_merged
 
 
 def preprocess_questions_answers(
         questions: List, annotations: List, max_answers=None, only_one_word_answers=True) -> DataFrame:
-    data = {"question": [], "answer": [], "image_id": [], "preprocessed_question": []}
+    data = []
     id_to_question = {q['question_id']: q for q in questions}
     for ann in progress_bar(annotations):
         question_info = id_to_question[ann['question_id']]
-        question = question_info["question"]
-        preprecessed_question = preprocess_text(question)
+        preprecessed_question = preprocess_text(question_info["question"])
         img_id = question_info["image_id"]
         for ans in ann["answers"]:
             if ans["answer_confidence"] != "no":
-                data["question"].append(question)
-                data["answer"].append(ans["answer"])
-                data["image_id"].append(img_id)
-                data["preprocessed_question"].append(preprecessed_question)
+                data.append({"question": question_info["question"],
+                             "preprocessed_question": preprecessed_question,
+                             "question_id": question_info["question_id"],
+                             "image_id": img_id,
+                             "answer": ans["answer"]})
     data = DataFrame(data)
 
     # TODO: in future consider all (lost ~200k examples from 2mil)
