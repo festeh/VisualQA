@@ -6,12 +6,14 @@ import numpy as np
 from fastprogress import progress_bar
 from nltk import word_tokenize
 from pandas import DataFrame
+from tqdm import tqdm
 
 from src.utils.load_images import read_image
 
 
-def preprocess_text(text: str):
-    return word_tokenize(text.lower())
+def preprocess_text(text: str) -> str:
+    words = word_tokenize(text.lower())
+    return ' '.join(words)
 
 
 def read_data(data_path: Union[Path, str], data_type='train'):
@@ -54,14 +56,14 @@ def preprocess_questions_answers(
         questions: List, annotations: List, max_answers=None, only_one_word_answers=True) -> DataFrame:
     data = []
     id_to_question = {q['question_id']: q for q in questions}
-    for ann in progress_bar(annotations):
+    for ann in tqdm(annotations):
         question_info = id_to_question[ann['question_id']]
-        preprecessed_question = preprocess_text(question_info["question"])
+        preprocessed_question = preprocess_text(question_info["question"])
         img_id = question_info["image_id"]
         for ans in ann["answers"]:
             if ans["answer_confidence"] != "no":
                 data.append({"question": question_info["question"],
-                             "preprocessed_question": preprecessed_question,
+                             "preprocessed_question": preprocessed_question,
                              "question_id": question_info["question_id"],
                              "image_id": img_id,
                              "answer": ans["answer"]})
@@ -69,12 +71,12 @@ def preprocess_questions_answers(
 
     # TODO: in future consider all (lost ~200k examples from 2mil)
     if only_one_word_answers:
-        allowed_answers = data["answer"].str.split().str.len() == 1
-        data = data[allowed_answers]
+        allowed_answers_idx = data["answer"].str.split().str.len() == 1
+        data = data[allowed_answers_idx]
 
     if max_answers is not None:
         allowed_answers = data["answer"].value_counts()[:max_answers]
-        data = data[data.answer.isin(allowed_answers)]
+        data = data[data.answer.isin(allowed_answers.index)]
 
     return data
 
