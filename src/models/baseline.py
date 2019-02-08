@@ -19,7 +19,8 @@ class BaselineModel(Module):
         self.image_to_hidden = Linear(image_emb_size, h_size)
         self.scores_layer = Linear(h_size, n_classes)
 
-    def forward(self, questions: str, image_emb):
+    def forward(self, inputs):
+        questions, image_emb = inputs
         q_embs = [[self.vectors[w] for w in q.split() if w in self.vectors] for q in questions]
         question_tensor = [torch.tensor(numpy.mean(q, axis=0), device=self.device) for q in q_embs]
         question_tensor = torch.stack(question_tensor)

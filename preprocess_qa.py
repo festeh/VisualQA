@@ -4,7 +4,7 @@ from pathlib import Path
 
 import json
 
-from src.utils.load_qa import read_data, merge_questions_answers, preprocess_questions_answers
+from src.utils.load_qa import preprocess_questions_answers
 
 
 # @click.command(help="Preprocesses VisualQA v.2 data")

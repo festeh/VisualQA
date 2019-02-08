@@ -35,24 +35,25 @@ class VisualQADataset(Dataset):
         answer = info['answer']
         answer_idx = self.answer_vocabulary[answer]
         image = self.preprocessed_imgs[self.image_id_to_index[info['image_id']]]
-        return question, answer_idx, image
+        return (question, image), answer_idx
 
 
 class VisualQAValidationDataset(VisualQADataset):
 
     def __init__(self, qa, preprocessed_images_file, image_filenames, answer_vocabulary):
         super().__init__(qa, preprocessed_images_file, image_filenames, answer_vocabulary)
-        self.qa.preprocessed_question = self.qa.preprocessed_question.apply(lambda x: ' '.join(x))
-        self.qa_groups = self.qa.groupby(["preprocessed_question", "image_id"]).agg(
-            {'answer': lambda x: ' '.join(x)})
 
     def __getitem__(self, idx):
-        info = self.qa_groups.iloc[idx]
-        question, image_id = info.name
-        answers = info['answers'].split()
-        answer_idxs = [self.answer_vocabulary[ans] for ans in answers]
-        image = self.preprocessed_imgs[self.image_id_to_index[image_id]]
-        return question, answer_idxs, image
+        info = self.qa.iloc[idx]
+        question = info['preprocessed_question']
+        answers = info['answer']
+        answer_idxs = [self.answer_vocabulary.get(ans, -1) for ans in answers]
+
+        if len(answer_idxs) < 10:
+            answer_idxs = answer_idxs + [-1] * (10 - len(answer_idxs))
+
+        image = self.preprocessed_imgs[self.image_id_to_index[info['image_id']]]
+        return (question, image), numpy.array(answer_idxs)
 
 
 class AnswerVocabulary:
@@ -66,6 +67,12 @@ class AnswerVocabulary:
         elif isinstance(item, int):
             return self.index_to_answer[item]
         raise RuntimeError(f"Item should be str or int, got {type(item)}")
+
+    def get(self, item, default_value):
+        try:
+            return self.__getitem__(item)
+        except:
+            return default_value
 
 
 def get_data(raw_data_path: Path,
