@@ -28,6 +28,7 @@ data, ans_vocab = get_data(Path(config["raw_data_path"]), Path(config['preproces
                            parts=["train", "val"])
 train_dataset = VisualQADataset(*data['train'], answer_vocabulary=ans_vocab)
 
+#TODO: remove
 train_dataset.qa = train_dataset.qa[:1000]
 
 val_dataset = VisualQAValidationDataset(*data['val'], answer_vocabulary=ans_vocab)
@@ -55,28 +56,27 @@ evaluator = create_supervised_evaluator(model,
 
 @trainer.on(Events.ITERATION_COMPLETED)
 def log_training_loss(trainer):
-    print("Epoch[{}] Loss: {:.2f}".format(trainer.state.epoch, trainer.state.output))
+    print(f"Epoch[{trainer.state.epoch}] Loss: {trainer.state.output:.2f}")
 
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_training_results(trainer):
     evaluator.run(train_loader)
     metrics = evaluator.state.metrics
-    print("Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.2f}"
-          .format(trainer.state.epoch, metrics['accuracy'], metrics['nll']))
+    print(f"Training Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f} Avg loss: {metrics['nll']:.2f}")
 
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_validation_results(trainer):
     evaluator.run(val_loader)
     metrics = evaluator.state.metrics
-    print("Validation Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.2f}"
-          .format(trainer.state.epoch, metrics['accuracy'], metrics['nll']))
+    print(
+        f"Validation Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f} Avg loss: {metrics['nll']:.2f}")
 
 
-trainer.run(train_loader, max_epochs=100)
+# trainer.run(train_loader, max_epochs=100)
 
 
 # #
-# for iter, (questions, answers, image_embs) in tqdm(enumerate(train_loader)):
+# for iter, ((questions, image_embs), answers) in tqdm(enumerate(train_loader)):
 #     optimizer.zero_grad()
 #     logits = model(questions, image_embs.to(device))
 #     loss = loss_fn(logits, answers.to(device))
