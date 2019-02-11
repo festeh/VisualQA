@@ -12,6 +12,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from src.metrics import VisualQAAccuracy
 from src.models.baseline import BaselineModel
 from src.utils.load_all_data import get_data, VisualQADataset, VisualQAValidationDataset
 
@@ -28,8 +29,8 @@ data, ans_vocab = get_data(Path(config["raw_data_path"]), Path(config['preproces
                            parts=["train", "val"])
 train_dataset = VisualQADataset(*data['train'], answer_vocabulary=ans_vocab)
 
-#TODO: remove
-train_dataset.qa = train_dataset.qa[:1000]
+# TODO: remove
+# train_dataset.qa = train_dataset.qa[:1000]
 
 val_dataset = VisualQAValidationDataset(*data['val'], answer_vocabulary=ans_vocab)
 
@@ -50,29 +51,32 @@ loss = CrossEntropyLoss()
 
 trainer = create_supervised_trainer(model, optimizer, loss, device=device)
 evaluator = create_supervised_evaluator(model,
-                                        metrics={'accuracy': Accuracy(),
-                                                 'nll': Loss(loss)
+                                        metrics={'accuracy': VisualQAAccuracy(),
+                                                 # 'nll': Loss(loss)
                                                  }, device=device)
 
 @trainer.on(Events.ITERATION_COMPLETED)
 def log_training_loss(trainer):
-    print(f"Epoch[{trainer.state.epoch}] Loss: {trainer.state.output:.2f}")
+    n_batches = len(train_loader)
+    iter_num = trainer.state.iteration
+    if iter_num % 500 == 0:
+        print(f"Epoch[{trainer.state.epoch}] Iter: { iter_num% n_batches}/{n_batches} Loss: {trainer.state.output:.2f}")
 
-@trainer.on(Events.EPOCH_COMPLETED)
-def log_training_results(trainer):
-    evaluator.run(train_loader)
-    metrics = evaluator.state.metrics
-    print(f"Training Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f} Avg loss: {metrics['nll']:.2f}")
+# @trainer.on(Events.EPOCH_COMPLETED)
+# def log_training_results(trainer):
+#     evaluator.run(train_loader)
+#     metrics = evaluator.state.metrics
+#     print(f"Training Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f} Avg loss: {metrics['nll']:.2f}")
 
 @trainer.on(Events.EPOCH_COMPLETED)
 def log_validation_results(trainer):
     evaluator.run(val_loader)
     metrics = evaluator.state.metrics
     print(
-        f"Validation Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f} Avg loss: {metrics['nll']:.2f}")
+        f"Validation Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f}")
 
 
-# trainer.run(train_loader, max_epochs=100)
+trainer.run(train_loader, max_epochs=100)
 
 
 # #
