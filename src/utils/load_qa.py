@@ -25,31 +25,8 @@ def read_data(data_path: Union[Path, str], data_type='train'):
     answers_file, questions_file = DATA_FILES[data_type]
     questions = json.load((data_path / questions_file).open())['questions']
     answers = json.load((data_path / answers_file).open())["annotations"]
-    logging.info("Readed raw data")
+    logging.info("Read raw data")
     return questions, answers
-
-
-# def filter_data(data, condition=lambda x: True):
-#     return [x for x in data if condition(x)]
-
-# def merge_questions_answers(questions: List, answers: List, flatten=False):
-#     """Combine questions and answers obtained from `read_data` into single list"""
-#     id_to_question = {q['question_id']: q for q in questions}
-#     qa_merged = [{**a, **id_to_question[a['question_id']]} for a in answers]
-#     if flatten:
-#         qa_merged_flat = []
-#         for qa in qa_merged:
-#             answers = qa.pop('answers')
-#             for ans_info in answers:
-#                 qa_merged_flat.append({
-#                     "question": qa["question"],
-#                     "preprocessed_question": qa.get("preprocessed_question", ""),
-#                     "image_id": qa["image_id"],
-#                     "answer": ans_info["answer"],
-#                     "preprocessed_answer": ans_info.get("preprocessed_answer", ""),
-#                     "confidence": ans_info["answer_confidence"]})
-#         return qa_merged_flat
-#     return qa_merged
 
 
 def preprocess_questions_answers(
@@ -71,7 +48,8 @@ def preprocess_questions_answers(
                  "question_id": question_info["question_id"],
                  "image_id": img_id}
         if not flatten:
-            for ans in confident_answers: data.append({**datum, **{"answer": ans["answer"]}})
+            for ans in confident_answers:
+                data.append({**datum, **{"answer": ans["answer"]}})
         else:
             data.append({**datum, **{"answer": [ans["answer"] for ans in confident_answers]}})
     data = DataFrame(data)
@@ -121,3 +99,6 @@ def sample_examples(qa: List[Dict], img_path: Path, n_examples):
         qs = [qa[idx] for idx in idxs]
         imgs = [read_image(img_path, q['image_id'], True) for q in qs]
     return imgs, qs
+
+
+if __name__ == "__main__":
