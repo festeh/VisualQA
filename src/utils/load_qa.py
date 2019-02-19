@@ -1,14 +1,12 @@
 import json
 import logging
 from pathlib import Path
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Tuple
 import numpy as np
-from fastprogress import progress_bar
 from nltk import word_tokenize
 from pandas import DataFrame
 from tqdm import tqdm
-
-from src.utils.load_images import read_image
+import click
 
 
 def preprocess_text(text: str) -> str:
@@ -16,16 +14,20 @@ def preprocess_text(text: str) -> str:
     return ' '.join(words)
 
 
-def read_data(data_path: Union[Path, str], data_type='train'):
+DATA_FILES = {'train': ["v2_mscoco_train2014_annotations.json", "v2_OpenEnded_mscoco_train2014_questions.json"],
+              'val': ["v2_mscoco_val2014_annotations.json", "v2_OpenEnded_mscoco_val2014_questions.json"],
+              'sample': ["annotations.json", "questions.json"]}
+
+
+def read_questions_answers(data_path: Union[Path, str], data_type='train') -> Tuple[List, List]:
     """Gets the VQ2 data"""
     # TODO: support test data
     data_path = Path(data_path)
-    DATA_FILES = {'train': ["v2_mscoco_train2014_annotations.json", "v2_OpenEnded_mscoco_train2014_questions.json"],
-                  'val': ["v2_mscoco_val2014_annotations.json", "v2_OpenEnded_mscoco_val2014_questions.json"]}
+
     answers_file, questions_file = DATA_FILES[data_type]
     questions = json.load((data_path / questions_file).open())['questions']
     answers = json.load((data_path / answers_file).open())["annotations"]
-    logging.info("Read raw data")
+    logging.info("Loaded raw questions and answers")
     return questions, answers
 
 
@@ -68,7 +70,7 @@ def preprocess_questions_answers(
 
 def process_part_qa_data(data_path: Union[Path, str], data_type='train', max_answers=None):
     logging.info(f"Reading {data_type} data part")
-    q, a = read_data(data_path, data_type)
+    q, a = read_questions_answers(data_path, data_type)
     if data_type == "train":
         return preprocess_questions_answers(q, a, max_answers=max_answers, flatten=False)
     else:
@@ -91,6 +93,7 @@ def filter_qa_pairs(qa: List[Dict], removed=("no",)):
 
 def sample_examples(qa: List[Dict], img_path: Path, n_examples):
     """Firstly, randomly selects questions-answer pairs, then obtains corresponding images"""
+    from src.utils.load_images import read_image
     idxs = np.random.choice(len(qa), n_examples)
     if isinstance(qa, DataFrame):
         qs = [elem[1] for elem in qa.iloc[idxs].iterrows()]
@@ -101,4 +104,18 @@ def sample_examples(qa: List[Dict], img_path: Path, n_examples):
     return imgs, qs
 
 
+@click.command()
+@click.option("--config_path", help="path to config_file")
+def main(config_path):
+    with Path(config_path).open() as f:
+        config = json.load(f)
+    q, a = read_questions_answers(config["data_path"], "sample")
+    sample_data = preprocess_questions_answers(q, a, config["max_answers"], only_one_word_answers=True)
+    saving_dir = Path(config["data_path"]) / "preprocessed"
+    if not saving_dir.exists():
+        saving_dir.mkdir(parents=True)
+    save_qa_data(sample_data, saving_dir, "sample")
+
+
 if __name__ == "__main__":
+    main()
