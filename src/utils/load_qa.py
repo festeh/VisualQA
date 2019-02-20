@@ -51,7 +51,7 @@ def preprocess_questions_answers(
                  "image_id": img_id}
         if not flatten:
             for ans in confident_answers:
-                data.append({**datum, **{"answer": ans["answer"]}})
+                data.append({**datum, "answer": ans["answer"]})
         else:
             data.append({**datum, **{"answer": [ans["answer"] for ans in confident_answers]}})
     data = DataFrame(data)
@@ -109,12 +109,14 @@ def sample_examples(qa: List[Dict], img_path: Path, n_examples):
 def main(config_path):
     with Path(config_path).open() as f:
         config = json.load(f)
-    q, a = read_questions_answers(config["data_path"], "sample")
-    sample_data = preprocess_questions_answers(q, a, config["max_answers"], only_one_word_answers=True)
-    saving_dir = Path(config["data_path"]) / "preprocessed"
+    saving_dir = Path(config["saving_dir"])
     if not saving_dir.exists():
         saving_dir.mkdir(parents=True)
-    save_qa_data(sample_data, saving_dir, "sample")
+    q, a = read_questions_answers(config["data_path"], "train")
+    train_data = preprocess_questions_answers(q, a,
+                                               config["max_answers"],
+                                               only_one_word_answers=True)
+    save_qa_data(train_data, saving_dir, "train")
 
 
 if __name__ == "__main__":
