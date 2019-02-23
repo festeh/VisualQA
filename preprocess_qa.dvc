@@ -1,12 +1,18 @@
-cmd: python src/utils/load_qa.py --max_answers=1000 --qa_saving_dir=/data/preprocessed/qa
-  --train_annotations=/data/v2_mscoco_train2014_annotations.json --train_questions=/data/v2_OpenEnded_mscoco_train2014_questions.json
-  --val_annotations=/data/v2_mscoco_val2014_annotations.json --val_questions=/data/v2_OpenEnded_mscoco_val2014_questions.json
+cmd: python src/utils/load_qa.py --images_saving_dir=/data/preprocessed/qa --max_answers=1000
+  --train_annotations=/data/v2_mscoco_train2014_annotations.json --train_images=/data/train2014
+  --train_qa_result_file=/data/preprocessed/qa_train.json --train_questions=/data/v2_OpenEnded_mscoco_train2014_questions.json
+  --val_annotations=/data/v2_mscoco_val2014_annotations.json --val_images=/data/val2014
+  --val_qa_result_file=/data/preprocessed/qa_val.json --val_questions=/data/v2_OpenEnded_mscoco_val2014_questions.json
 deps:
-- md5: 0c0e0d19e2819bb85b6290e7a278f99b
+- md5: 592e78c56ec99f8d863449ffa30d2f0b
   path: src/utils/load_qa.py
-md5: cc81df328a058fe61d2801e4f3e35818
+md5: 0c7cc77f66832bdbcd5207eeec48c621
 outs:
 - cache: true
-  md5: c31780b7718435c71674824072601013.dir
+  md5: 6b0995c3abe2230feda74a3dcea737a5
   metric: false
-  path: /data/preprocessed/qa
+  path: /data/preprocessed/qa_train.json
+- cache: true
+  md5: 6d92be59f044ef2c9fc9178e66868d68
+  metric: false
+  path: /data/preprocessed/qa_val.json
