@@ -79,10 +79,10 @@ def process_part_qa_data(data_path: Union[Path, str], data_type='train', max_ans
 
 
 def save_qa_data(data, save_data_path, data_type="train"):
-    save_dir = Path(save_data_path) / data_type
+    save_dir = Path(save_data_path)
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
-    file_path = save_dir / "qa.pkl"
+    file_path = save_dir / f"qa_{data_type}.pkl"
     data.to_pickle(file_path)
 
 
@@ -105,18 +105,20 @@ def sample_examples(qa: List[Dict], img_path: Path, n_examples):
 
 
 @click.command()
-@click.option("--config_path", help="path to config_file")
-def main(config_path):
-    with Path(config_path).open() as f:
-        config = json.load(f)
-    saving_dir = Path(config["saving_dir"])
+@click.option("--data_dir", help="path to qa data")
+@click.option("--saving_dir", help="path to saved data")
+@click.option("--max_answers", type=int, help="how many answers to use")
+def main(data_dir, saving_dir, max_answers=1000):
+    saving_dir = Path(saving_dir)
     if not saving_dir.exists():
         saving_dir.mkdir(parents=True)
-    q, a = read_questions_answers(config["data_path"], "train")
-    train_data = preprocess_questions_answers(q, a,
-                                               config["max_answers"],
-                                               only_one_word_answers=True)
+    train_data = preprocess_questions_answers(*read_questions_answers(data_dir, "train"),
+                                              max_answers=max_answers,
+                                              only_one_word_answers=True)
+    val_data = preprocess_questions_answers(*read_questions_answers(data_dir, "val"),
+                                            max_answers=None, only_one_word_answers=False, flatten=True)
     save_qa_data(train_data, saving_dir, "train")
+    save_qa_data(val_data, saving_dir, "val")
 
 
 if __name__ == "__main__":
