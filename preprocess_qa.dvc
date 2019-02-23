@@ -1,0 +1,12 @@
+cmd: python src/utils/load_qa.py --max_answers=1000 --qa_saving_dir=/data/preprocessed/qa
+  --train_annotations=/data/v2_mscoco_train2014_annotations.json --train_questions=/data/v2_OpenEnded_mscoco_train2014_questions.json
+  --val_annotations=/data/v2_mscoco_val2014_annotations.json --val_questions=/data/v2_OpenEnded_mscoco_val2014_questions.json
+deps:
+- md5: 0c0e0d19e2819bb85b6290e7a278f99b
+  path: src/utils/load_qa.py
+md5: cc81df328a058fe61d2801e4f3e35818
+outs:
+- cache: true
+  md5: c31780b7718435c71674824072601013.dir
+  metric: false
+  path: /data/preprocessed/qa
