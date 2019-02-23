@@ -8,26 +8,21 @@ from pandas import DataFrame
 from tqdm import tqdm
 import click
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def preprocess_text(text: str) -> str:
     words = word_tokenize(text.lower())
     return ' '.join(words)
 
 
-DATA_FILES = {'train': ["v2_mscoco_train2014_annotations.json", "v2_OpenEnded_mscoco_train2014_questions.json"],
-              'val': ["v2_mscoco_val2014_annotations.json", "v2_OpenEnded_mscoco_val2014_questions.json"],
-              'sample': ["annotations.json", "questions.json"]}
-
-
-def read_questions_answers(data_path: Union[Path, str], data_type='train') -> Tuple[List, List]:
-    """Gets the VQ2 data"""
-    # TODO: support test data
-    data_path = Path(data_path)
-
-    answers_file, questions_file = DATA_FILES[data_type]
-    questions = json.load((data_path / questions_file).open())['questions']
-    answers = json.load((data_path / answers_file).open())["annotations"]
-    logging.info("Loaded raw questions and answers")
+def read_questions_answers(questions_path, answers_path) -> Tuple[List, List]:
+    """Gets the VQ2 questions and answers"""
+    with open(questions_path) as f:
+        questions = json.load(f)['questions']
+    with open(answers_path) as f:
+        answers = json.load(f)["annotations"]
+    logger.info("Loaded raw questions and answers")
     return questions, answers
 
 
@@ -104,18 +99,27 @@ def sample_examples(qa: List[Dict], img_path: Path, n_examples):
     return imgs, qs
 
 
-@click.command()
-@click.option("--data_dir", help="path to qa data")
-@click.option("--saving_dir", help="path to saved data")
+@click.command(context_settings=dict(
+    ignore_unknown_options=True, allow_extra_args=True)
+)
+@click.option("--train_annotations", help="path to train annotations")
+@click.option("--val_annotations", help="path to val annotations")
+@click.option("--train_questions", help="path to train questions")
+@click.option("--val_questions", help="path to val questions")
+@click.option("--qa_saving_dir", help="path to saved data")
 @click.option("--max_answers", type=int, help="how many answers to use")
-def main(data_dir, saving_dir, max_answers=1000):
-    saving_dir = Path(saving_dir)
+def main(
+        train_annotations, val_annotations,
+        train_questions, val_questions,
+        qa_saving_dir,
+        max_answers):
+    saving_dir = Path(qa_saving_dir)
     if not saving_dir.exists():
         saving_dir.mkdir(parents=True)
-    train_data = preprocess_questions_answers(*read_questions_answers(data_dir, "train"),
+    train_data = preprocess_questions_answers(*read_questions_answers(train_questions, train_annotations),
                                               max_answers=max_answers,
                                               only_one_word_answers=True)
-    val_data = preprocess_questions_answers(*read_questions_answers(data_dir, "val"),
+    val_data = preprocess_questions_answers(*read_questions_answers(val_questions, val_annotations),
                                             max_answers=None, only_one_word_answers=False, flatten=True)
     save_qa_data(train_data, saving_dir, "train")
     save_qa_data(val_data, saving_dir, "val")
