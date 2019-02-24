@@ -1,18 +1,20 @@
-cmd: python src/utils/load_qa.py --images_saving_dir=/data/preprocessed/qa --max_answers=1000
-  --train_annotations=/data/v2_mscoco_train2014_annotations.json --train_images=/data/train2014
-  --train_qa_result_file=/data/preprocessed/qa_train.json --train_questions=/data/v2_OpenEnded_mscoco_train2014_questions.json
-  --val_annotations=/data/v2_mscoco_val2014_annotations.json --val_images=/data/val2014
-  --val_qa_result_file=/data/preprocessed/qa_val.json --val_questions=/data/v2_OpenEnded_mscoco_val2014_questions.json
+cmd: python src/utils/load_qa.py --max_answers=1000 --train_annotations=/data/v2_mscoco_train2014_annotations.json
+  --train_filenames_result_file=/data/preprocessed/train_filenames.json --train_images=/data/train2014
+  --train_images_result_file=/data/preprocessed/train_images.hdf5 --train_qa_result_file=/data/preprocessed/qa_train.json
+  --train_questions=/data/v2_OpenEnded_mscoco_train2014_questions.json --val_annotations=/data/v2_mscoco_val2014_annotations.json
+  --val_filenames_result_file=/data/preprocessed/val_filenames.json --val_images=/data/val2014
+  --val_images_result_file=/data/preprocessed/val_images.hdf5 --val_qa_result_file=/data/preprocessed/qa_val.json
+  --val_questions=/data/v2_OpenEnded_mscoco_val2014_questions.json
 deps:
-- md5: 592e78c56ec99f8d863449ffa30d2f0b
+- md5: b286df692f51db853a6a7b6b4f64c2f3
   path: src/utils/load_qa.py
-md5: 0c7cc77f66832bdbcd5207eeec48c621
+md5: f000b664cfe8b027ab9aa46ae194d5a0
 outs:
 - cache: true
-  md5: 6b0995c3abe2230feda74a3dcea737a5
+  md5: 48819f113600ecfaf1fadd42037a18f0
   metric: false
   path: /data/preprocessed/qa_train.json
 - cache: true
-  md5: 6d92be59f044ef2c9fc9178e66868d68
+  md5: c11a4af755522ad470a8d96fe3d4605d
   metric: false
   path: /data/preprocessed/qa_val.json
