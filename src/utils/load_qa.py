@@ -73,12 +73,11 @@ def process_part_qa_data(data_path: Union[Path, str], data_type='train', max_ans
             q, a, max_answers=None, flatten=True, only_one_word_answers=False)
 
 
-def save_qa_data(data, save_data_path, data_type="train"):
-    save_dir = Path(save_data_path)
-    if not save_dir.exists():
-        save_dir.mkdir(parents=True)
-    file_path = save_dir / f"qa_{data_type}.pkl"
-    data.to_pickle(file_path)
+def save_qa_data(data, save_data_path):
+    save_data_path = Path(save_data_path)
+    if not save_data_path.parent.exists():
+        save_data_path.parent.mkdir(parents=True)
+    data.to_pickle(save_data_path)
 
 
 def filter_qa_pairs(qa: List[Dict], removed=("no",)):
