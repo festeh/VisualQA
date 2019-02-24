@@ -32,4 +32,10 @@ local emb_dir = "~/.embeddings/";
         image_emb_size: 4096,
         n_classes: $.data.max_answers
     },
+    training : {
+        n_epochs: 10,
+        lr: 1e-3,
+        train_batch_size: 128,
+        val_batch_size: 128
+    },
 }
