@@ -8,8 +8,11 @@ from pandas import DataFrame
 from tqdm import tqdm
 import click
 
+from src.utils.helpers import init_config
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def preprocess_text(text: str) -> str:
     words = word_tokenize(text.lower())
@@ -99,31 +102,19 @@ def sample_examples(qa: List[Dict], img_path: Path, n_examples):
     return imgs, qs
 
 
-@click.command(context_settings=dict(
-    ignore_unknown_options=True, allow_extra_args=True)
-)
-@click.option("--train_annotations", help="path to train annotations")
-@click.option("--val_annotations", help="path to val annotations")
-@click.option("--train_questions", help="path to train questions")
-@click.option("--val_questions", help="path to val questions")
-@click.option("--qa_saving_dir", help="path to saved data")
-@click.option("--max_answers", type=int, help="how many answers to use")
-def main(
+def preprocess_questions_answers(
         train_annotations, val_annotations,
         train_questions, val_questions,
-        qa_saving_dir,
+        train_qa_result_file, val_qa_result_file,
         max_answers):
-    saving_dir = Path(qa_saving_dir)
-    if not saving_dir.exists():
-        saving_dir.mkdir(parents=True)
     train_data = preprocess_questions_answers(*read_questions_answers(train_questions, train_annotations),
                                               max_answers=max_answers,
                                               only_one_word_answers=True)
     val_data = preprocess_questions_answers(*read_questions_answers(val_questions, val_annotations),
                                             max_answers=None, only_one_word_answers=False, flatten=True)
-    save_qa_data(train_data, saving_dir, "train")
-    save_qa_data(val_data, saving_dir, "val")
+    save_qa_data(train_data, train_qa_result_file)
+    save_qa_data(val_data, val_qa_result_file)
 
 
 if __name__ == "__main__":
-    main()
+    preprocess_questions_answers(**init_config("data", preprocess_questions_answers))
