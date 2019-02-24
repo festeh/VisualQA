@@ -15,9 +15,9 @@ def create_vocab(
     combined = pd.concat([qa_train, qa_val])
     question_tokens = set(" ".join(combined.preprocessed_question.values).split())
     train_ans_tokens = set(qa_train.answer.values)
-    val_ans_tokens = set(" ".join(chain(*qa_val.answer.values)).split())
+    # val_ans_tokens = set(" ".join(chain(*qa_val.answer.values)).split())
 
-    vocab = ["[PAD]", "[UNK]", "[EOS]"] + sorted(question_tokens | train_ans_tokens | val_ans_tokens)
+    vocab = ["[UNK]", "[EOS]"] + sorted(question_tokens | train_ans_tokens)
     vocab_result_file = Path(vocab_result_file)
     create_parent_dir_if_not_exists(vocab_result_file)
     with vocab_result_file.open("w") as f:
