@@ -39,16 +39,17 @@ def preprocess_questions_answers(
         preprocessed_question = preprocess_text(question_info["question"])
         img_id = question_info["image_id"]
 
-        confident_answers = [ans for ans in ann["answers"] if ans["answer_confidence"] != "no"]
+        confident_answers = [preprocess_text(ans["answer"]) for ans in ann["answers"]
+                             if ans["answer_confidence"] != "no"]
         datum = {"question": question_info["question"],
                  "preprocessed_question": preprocessed_question,
                  "question_id": question_info["question_id"],
                  "image_id": img_id}
         if not flatten:
             for ans in confident_answers:
-                data.append({**datum, "answer": ans["answer"]})
+                data.append({**datum, "answer": ans})
         else:
-            data.append({**datum, **{"answer": [ans["answer"] for ans in confident_answers]}})
+            data.append({**datum, **{"answer": [ans for ans in confident_answers]}})
     data = DataFrame(data)
 
     # TODO: in future consider all (lost ~200k examples from 2mil)
