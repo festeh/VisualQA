@@ -1,20 +1,14 @@
-cmd: python src/utils/load_qa.py --max_answers=1000 --train_annotations=/data/v2_mscoco_train2014_annotations.json
-  --train_filenames_result_file=/data/preprocessed/train_filenames.json --train_images=/data/train2014
-  --train_images_result_file=/data/preprocessed/train_images.hdf5 --train_qa_result_file=/data/preprocessed/qa_train.json
-  --train_questions=/data/v2_OpenEnded_mscoco_train2014_questions.json --val_annotations=/data/v2_mscoco_val2014_annotations.json
-  --val_filenames_result_file=/data/preprocessed/val_filenames.json --val_images=/data/val2014
-  --val_images_result_file=/data/preprocessed/val_images.hdf5 --val_qa_result_file=/data/preprocessed/qa_val.json
-  --val_questions=/data/v2_OpenEnded_mscoco_val2014_questions.json
+cmd: python src/utils/load_qa.py
 deps:
-- md5: b286df692f51db853a6a7b6b4f64c2f3
+- md5: 7814b4ac857ff809694b30433b5d5932
   path: src/utils/load_qa.py
-md5: f000b664cfe8b027ab9aa46ae194d5a0
+md5: 22851d7bf8eeb7bb0eb9163027f8361e
 outs:
 - cache: true
   md5: 48819f113600ecfaf1fadd42037a18f0
   metric: false
-  path: /data/preprocessed/qa_train.json
+  path: /data/preprocessed/qa_train.pkl
 - cache: true
   md5: c11a4af755522ad470a8d96fe3d4605d
   metric: false
-  path: /data/preprocessed/qa_val.json
+  path: /data/preprocessed/qa_val.pkl
