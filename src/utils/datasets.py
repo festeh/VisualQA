@@ -78,7 +78,9 @@ def my_collate(batch, vocab):
     questions = Batch([x[0] for x in batch])
     questions.index_instances(vocab)
     rest = [x[1:] for x in batch]
-    return [questions.as_tensor_dict()["question"]["tokens"]] + default_collate(rest)
+    question_batch = questions.as_tensor_dict()["question"]["tokens"]
+    image_batch, answer_batch = default_collate(rest)
+    return [(question_batch, image_batch), answer_batch]
 
 
 if __name__ == "__main__":
