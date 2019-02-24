@@ -1,18 +1,13 @@
 import logging
-import pickle
 from functools import partial
-
-import numpy
 import torch
-from pathlib import Path
 
 from ignite.contrib.handlers import ProgressBar
-from ignite.engine import create_supervised_trainer, create_supervised_evaluator, Events
-from ignite.metrics import Loss, Accuracy, RunningAverage
+from ignite.engine import create_supervised_trainer, create_supervised_evaluator
+from ignite.metrics import Loss, RunningAverage
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from src.utils.pretrained_embeddings import SavedEmbeddings
 
