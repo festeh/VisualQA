@@ -1,5 +1,6 @@
 import logging
 import pickle
+from functools import partial
 from typing import Dict
 
 import torch
@@ -9,9 +10,10 @@ import numpy
 from allennlp.common import Params
 from allennlp.data import Vocabulary
 from torch.nn import Module, Linear, Embedding
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.utils.datasets import VisualQADataset
+from src.utils.datasets import VisualQADataset, my_collate
 from src.utils.helpers import init_config, filter_config
 from src.utils.pretrained_embeddings import SavedEmbeddings
 
@@ -49,7 +51,7 @@ class BaselineModel(Module):
     def forward(self, inputs):
         questions_idxs, image_emb = inputs
         question_embs = self.embs(questions_idxs)
-        question_features = question_embs.mean(dim=-1)
+        question_features = question_embs.mean(dim=1)
         question_features = self.question_to_hidden(question_features)
         image_tensor = self.image_to_hidden(image_emb)
         combined = question_features * image_tensor
@@ -65,6 +67,9 @@ if __name__ == "__main__":
     config = init_config()
     data_config = config.pop("data")
     data = VisualQADataset(**filter_config(data_config, VisualQADataset.__init__))
+    dl = DataLoader(data, batch_size=12, collate_fn=partial(my_collate, vocab=data.vocab))
+    x, y = next(iter(dl))
     model = BaselineModel(
         config=config["model"],
         vocab=data.vocab, embeddings_result_file=data_config["embeddings_result_file"])
+    model(x)
