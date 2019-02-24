@@ -13,7 +13,7 @@ from torch.nn import Module, Linear, Embedding
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.utils.datasets import VisualQADataset, my_collate
+from src.utils.datasets import VisualQATrainDataset, my_collate
 from src.utils.helpers import init_config, filter_config
 from src.utils.pretrained_embeddings import SavedEmbeddings
 
@@ -66,7 +66,7 @@ class BaselineModel(Module):
 if __name__ == "__main__":
     config = init_config()
     data_config = config.pop("data")
-    data = VisualQADataset(**filter_config(data_config, VisualQADataset.__init__))
+    data = VisualQATrainDataset(**filter_config(data_config, VisualQATrainDataset.__init__))
     dl = DataLoader(data, batch_size=12, collate_fn=partial(my_collate, vocab=data.vocab))
     x, y = next(iter(dl))
     model = BaselineModel(
