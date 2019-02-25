@@ -9,9 +9,6 @@ from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from src.utils.pretrained_embeddings import SavedEmbeddings
-
-
 from src.metrics import VisualQAAccuracy
 from src.models.model import BaselineModel
 from src.utils.datasets import VisualQAValDataset, VisualQATrainDataset, my_collate
@@ -57,23 +54,10 @@ evaluator = create_supervised_evaluator(model,
                                                  'nll': Loss(loss)
                                                  }, device=device)
 
-RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')
+run_avg = RunningAverage(output_transform=lambda x: x)
+run_avg.attach(trainer, 'loss')
 
-pbar = ProgressBar(persist=True)
+pbar = ProgressBar(persist=True, bar_format=None)
 pbar.attach(trainer, ['loss'])
-#
-# @trainer.on(Events.EPOCH_COMPLETED)
-# def log_training_results(trainer):
-#     evaluator.run(train_loader)
-#     metrics = evaluator.state.metrics
-#     print(f"Training Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f} Avg loss: {metrics['nll']:.2f}")
-#
-# @trainer.on(Events.EPOCH_COMPLETED)
-# def log_validation_results(trainer):
-#     evaluator.run(val_loader)
-#     metrics = evaluator.state.metrics
-#     print(
-#         f"Validation Results - Epoch: {trainer.state.epoch}  Avg accuracy: {metrics['accuracy']:.2f}")
-#
-#
+
 trainer.run(train_loader, max_epochs=training_config.pop("n_epochs"))
