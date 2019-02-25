@@ -1,10 +1,15 @@
+import datetime
+
 from ignite.engine import Engine, Events
 from tensorboardX import SummaryWriter
 
 
 class TensorboardHandler:
     def __init__(self, evaluator):
-        self.writer = SummaryWriter()
+        current_time = datetime.datetime.now().strftime('%b%d_%H-%M-%S')
+        self.log_dir = f'runs/{current_time}'
+
+        self.writer = SummaryWriter(log_dir=self.log_dir)
         self.evaluator = evaluator
 
     def add_loss(self, engine):
