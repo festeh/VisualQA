@@ -1,10 +1,7 @@
-import logging
 import pickle
 from functools import partial
-from typing import Dict
 
 import torch
-from pathlib import Path
 
 import numpy
 from allennlp.common import Params
