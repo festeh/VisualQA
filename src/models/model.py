@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from src.utils.datasets import VisualQATrainDataset, my_collate
 from src.utils.helpers import init_config, filter_config
-from src.utils.pretrained_embeddings import SavedEmbeddings
+from src.data_preprocessing.pretrained_embeddings import SavedEmbeddings
 
 
 class BaselineModel(Module):
@@ -35,7 +35,7 @@ class BaselineModel(Module):
         self.n_classes = config.get("n_classes")
 
         with open(embeddings_result_file, "rb") as f:
-            saved_embs: SavedEmbeddings = pickle.load(f)
+            saved_embs = SavedEmbeddings(pickle.load(f))
 
         self.embs = Embedding(self.vocab_size, embedding_dim=self.emb_size, padding_idx=0)
         emb_weights = numpy.zeros((self.vocab_size, self.emb_size), dtype=numpy.float32)
