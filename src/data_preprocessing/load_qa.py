@@ -6,7 +6,6 @@ import numpy as np
 from nltk import word_tokenize
 from pandas import DataFrame
 from tqdm import tqdm
-import click
 
 from src.utils.helpers import init_config
 
@@ -91,7 +90,7 @@ def filter_qa_pairs(qa: List[Dict], removed=("no",)):
 
 def sample_examples(qa: List[Dict], img_path: Path, n_examples):
     """Firstly, randomly selects questions-answer pairs, then obtains corresponding images"""
-    from src.utils.load_images import read_image
+    from src.data_preprocessing.load_images import read_image
     idxs = np.random.choice(len(qa), n_examples)
     if isinstance(qa, DataFrame):
         qs = [elem[1] for elem in qa.iloc[idxs].iterrows()]
