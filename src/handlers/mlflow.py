@@ -1,3 +1,7 @@
+import os
+import shutil
+import tempfile
+
 import mlflow
 from ignite.engine import Events, Engine
 
@@ -17,7 +21,9 @@ class MlflowHandler:
         mlflow.log_metric("accuracy", accuracy)
 
     def end_run(self, engine):
-        mlflow.end_run(self.run)
+        mlflow.end_run()
 
     def save_config(self, engine):
-        mlflow.log_artifact("config.jsonnet")
+        # Convinience for artifact ui...
+        shutil.copy("config.jsonnet", "/tmp/config.json")
+        mlflow.log_artifact("/tmp/config.json")
