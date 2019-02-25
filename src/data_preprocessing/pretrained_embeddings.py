@@ -13,7 +13,6 @@ class SavedEmbeddings:
         # pick arbitrary word
         self.emb_size = self.word_to_vec["the"].shape[0]
         self.zero_vector = numpy.zeros(self.emb_size, dtype=numpy.float32)
-        self.word_to_vec = {}
         self.return_zero_for_oov = True
 
     def get(self, word):
