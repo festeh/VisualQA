@@ -1,7 +1,7 @@
 from tensorboardX import SummaryWriter
 
 
-class TensorboardWriter:
+class TensorboardHandler:
     def __init__(self):
         self.writer = SummaryWriter()
 
