@@ -6,7 +6,7 @@ import torch
 import numpy
 from allennlp.common import Params
 from allennlp.data import Vocabulary
-from torch.nn import Module, Linear, Embedding
+from torch.nn import Module, Linear, Embedding, LeakyReLU
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -44,13 +44,14 @@ class BaselineModel(Module):
         self.question_to_hidden = Linear(self.emb_size, self.hidden_size)
         self.image_to_hidden = Linear(self.image_emb_size, self.hidden_size)
         self.scores_layer = Linear(self.hidden_size, self.n_classes)
+        self.lrelu = LeakyReLU()
 
     def forward(self, inputs):
         questions_idxs, image_emb = inputs
         question_embs = self.embs(questions_idxs)
         question_features = question_embs.mean(dim=1)
-        question_features = self.question_to_hidden(question_features)
-        image_tensor = self.image_to_hidden(image_emb)
+        question_features = self.lrelu(self.question_to_hidden(question_features))
+        image_tensor = self.lrelu(self.image_to_hidden(image_emb))
         combined = question_features * image_tensor
         logits = self.scores_layer(combined)
         return logits
