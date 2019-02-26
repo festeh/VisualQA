@@ -6,11 +6,13 @@ from pathlib import Path
 import h5py
 import numpy as np
 import torch
+from PIL import Image
 from einops import rearrange
 from skimage.io import imread
 from skimage.transform import resize as imresize
 from torch.utils.data import DataLoader, Dataset
 from torchvision.models import vgg16
+from torchvision.transforms import transforms
 from tqdm import tqdm
 
 from src.utils.helpers import create_parent_dir_if_not_exists, init_config
@@ -20,24 +22,25 @@ logger = logging.getLogger(__name__)
 
 
 def read_image(img_path, resize=False):
-    image = imread(img_path)
+    image = Image.open(img_path)
 
-    if len(image.shape) != 3:
-        image = np.stack([image, image, image], axis=2)
-
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+    #     image = np.stack([image, image, image], axis=2)
+    #
     if resize:
         return imresize(image, (224, 224), mode='reflect', anti_aliasing=True).astype(np.float32)
     return image
 
 
-def process_batch(model, imgs, processed, already_tensor=False):
-    if not already_tensor:
-        img_tensor = torch.tensor(imgs, dtype=torch.float32, device='cuda')
-    else:
-        img_tensor = imgs
-    img_tensor = rearrange(img_tensor, "b h w c -> b c h w")
+def process_batch(model, imgs, processed):
+    # if not already_tensor:
+    #     img_tensor = torch.tensor(imgs, dtype=torch.float32, device='cuda')
+    # else:
+    #     img_tensor = imgs
+    # img_tensor = rearrange(img_tensor, "b h w c -> b c h w")
     with torch.no_grad():
-        preproc_img = model(img_tensor).cpu().numpy()
+        preproc_img = model(imgs).cpu().numpy()
     processed.append(preproc_img)
     return processed
 
@@ -45,12 +48,20 @@ def process_batch(model, imgs, processed, already_tensor=False):
 class RawImagesDataset(Dataset):
     def __init__(self, img_files):
         self.img_files = img_files
+        self.pipeline = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])]
+        )
 
     def __len__(self):
         return len(self.img_files)
 
     def __getitem__(self, idx):
-        return read_image(self.img_files[idx], True)
+        img = read_image(self.img_files[idx], False)
+        processed_image = self.pipeline(img)
+        return idx, processed_image
 
 
 def load_pretrained_feature_extractor():
@@ -77,8 +88,11 @@ def preprocess_images(
         imgs_dataset = RawImagesDataset(files)
         dataloader = DataLoader(imgs_dataset, batch_size=batch_size,
                                 shuffle=False, num_workers=n_jobs)
-        for batch in tqdm(dataloader):
-            process_batch(model, batch.cuda(), preprocessed, True)
+        all_idxs = []
+        for idxs, batch in tqdm(dataloader):
+            all_idxs.extend(idxs)
+            process_batch(model, batch.cuda(), preprocessed)
+        assert sorted(all_idxs) == all_idxs
         filenames = [x.stem for x in files]
         images = np.concatenate(preprocessed)
 
