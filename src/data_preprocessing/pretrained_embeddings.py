@@ -13,6 +13,7 @@ class SavedEmbeddings:
         # pick arbitrary word
         self.emb_size = self.word_to_vec["the"].shape[0]
         self.zero_vector = numpy.zeros(self.emb_size, dtype=numpy.float32)
+        self.mean_vec = numpy.mean(list(self.word_to_vec.values()))
         self.return_zero_for_oov = True
 
     def get(self, word):
@@ -21,7 +22,8 @@ class SavedEmbeddings:
         except KeyError:
             if self.return_zero_for_oov:
                 return self.zero_vector
-            return numpy.random.uniform(-1., 1., self.emb_size)
+            # return numpy.random.uniform(-1., 1., self.emb_size)
+            return self.mean_vec
 
     def __getitem__(self, word):
         return self.get(word)
