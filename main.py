@@ -35,9 +35,6 @@ val_dataset = VisualQAValDataset(
     vocab=vocab,
     answer_vocabulary=train_dataset.answer_vocabulary)
 
-train_dataset.qa = train_dataset.qa
-val_dataset.qa = val_dataset.qa
-
 train_loader = DataLoader(
     train_dataset, batch_size=training_config.pop("train_batch_size"),
     shuffle=True, collate_fn=partial(my_collate, vocab=vocab), num_workers=6)
