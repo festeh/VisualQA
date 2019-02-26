@@ -6,7 +6,7 @@ import torch
 import numpy
 from allennlp.common import Params
 from allennlp.data import Vocabulary
-from torch.nn import Module, Linear, Embedding, LeakyReLU
+from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -29,24 +29,28 @@ class BaselineModel(Module):
         self.vocab_size = vocab.get_vocab_size("tokens")
         self.hidden_size = config.pop("hidden_size")
         self.image_emb_size = config.pop("image_emb_size")
-        self.n_classes = config.get("n_classes")
+        self.n_classes = config.pop("n_classes")
 
         with open(embeddings_result_file, "rb") as f:
             saved_embs = SavedEmbeddings(pickle.load(f))
 
-        self.embs = Embedding(self.vocab_size, embedding_dim=self.emb_size, padding_idx=0)
+        self.embs = Embedding(self.vocab_size, embedding_dim=self.emb_size, padding_idx=0, max_norm=1.0)
         emb_weights = numpy.zeros((self.vocab_size, self.emb_size), dtype=numpy.float32)
+        saved_embs.return_zero_for_oov = False
         for idx, word in tqdm(vocab.get_index_to_token_vocabulary("tokens").items()):
-            emb_weights[idx] = saved_embs.get(word)
+            if idx != 0:
+                emb_weights[idx] = saved_embs.get(word)
         self.embs.weight.data = torch.tensor(emb_weights)
         self.question_to_hidden = Linear(self.emb_size, self.hidden_size)
         self.image_to_hidden = Linear(self.image_emb_size, self.hidden_size)
         self.scores_layer = Linear(self.hidden_size, self.n_classes)
         self.lrelu = LeakyReLU()
+        self.dropout = Dropout(p=config.pop("dropout_rate"))
 
     def forward(self, inputs):
         questions_idxs, image_emb = inputs
         question_embs = self.embs(questions_idxs)
+        image_emb /= (image_emb ** 2 + 1e-6).sum(dim=1).sqrt().unsqueeze(1)
 
         mask = (questions_idxs != 0).type(torch.float32).unsqueeze(2)
         lengths = mask.sum(dim=1)
@@ -57,6 +61,7 @@ class BaselineModel(Module):
         question_features = self.lrelu(self.question_to_hidden(question_features))
         image_tensor = self.lrelu(self.image_to_hidden(image_emb))
         combined = question_features * image_tensor
+        # combined = self.dropout(combined)
         logits = self.scores_layer(combined)
         return logits
 
