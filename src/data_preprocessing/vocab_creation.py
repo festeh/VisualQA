@@ -14,7 +14,7 @@ def create_vocab(
     qa_val = pd.read_pickle(val_qa_result_file)
     combined = pd.concat([qa_train, qa_val])
     question_tokens = set(" ".join(combined.preprocessed_question.values).split())
-    train_ans_tokens = set(qa_train.answer.values)
+    train_ans_tokens = set((" ".join(qa_train.answer)).split())
     # val_ans_tokens = set(" ".join(chain(*qa_val.answer.values)).split())
 
     vocab = ["[UNK]", "[EOS]"] + sorted(question_tokens | train_ans_tokens)
