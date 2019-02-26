@@ -39,6 +39,7 @@ class BaselineModel(Module):
         for idx, word in tqdm(vocab.get_index_to_token_vocabulary("tokens").items()):
             emb_weights[idx] = saved_embs.get(word)
         self.embs.weight.data = torch.tensor(emb_weights)
+        self.embs.weight.requires_grad = False
         # self.vectors = pickle.load(Path(emb_path).open("rb"))
         # self.vectors["UNK"] = numpy.zeros(question_emb_size)
         self.question_to_hidden = Linear(self.emb_size, self.hidden_size)
@@ -49,7 +50,13 @@ class BaselineModel(Module):
     def forward(self, inputs):
         questions_idxs, image_emb = inputs
         question_embs = self.embs(questions_idxs)
-        question_features = question_embs.mean(dim=1)
+
+        # mask = (questions_idxs != 0).type(torch.float32)
+        # lengths = mask.sum(dim=1)
+        # question_features = (question_embs * mask.unsqueeze(2)).sum(dim=1)
+        # question_features /= lengths.unsqueeze(1)
+        question_features = question_embs.sum(dim=1)
+
         question_features = self.lrelu(self.question_to_hidden(question_features))
         image_tensor = self.lrelu(self.image_to_hidden(image_emb))
         combined = question_features * image_tensor
