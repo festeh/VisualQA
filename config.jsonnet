@@ -29,6 +29,7 @@ local emb_dir = "~/.embeddings/";
     model: {
         emb_size: 300,
         hidden_size: 1024,
+        dropout_rate: 0.2,
         image_emb_size: 4096,
         n_classes: $.data.max_answers
     },
