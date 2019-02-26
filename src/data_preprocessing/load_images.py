@@ -7,9 +7,6 @@ import h5py
 import numpy as np
 import torch
 from PIL import Image
-from einops import rearrange
-from skimage.io import imread
-from skimage.transform import resize as imresize
 from torch.utils.data import DataLoader, Dataset
 from torchvision.models import vgg16
 from torchvision.transforms import transforms
@@ -21,26 +18,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def read_image(img_path, resize=False):
+def read_image(img_path):
     image = Image.open(img_path)
-
     if image.mode != 'RGB':
         image = image.convert('RGB')
-    #     image = np.stack([image, image, image], axis=2)
-    #
-    if resize:
-        return imresize(image, (224, 224), mode='reflect', anti_aliasing=True).astype(np.float32)
     return image
 
 
 def process_batch(model, imgs, processed):
-    # if not already_tensor:
-    #     img_tensor = torch.tensor(imgs, dtype=torch.float32, device='cuda')
-    # else:
-    #     img_tensor = imgs
-    # img_tensor = rearrange(img_tensor, "b h w c -> b c h w")
     with torch.no_grad():
-        preproc_img = model(imgs).cpu().numpy()
+        feats = model(imgs)
+        preproc_img = feats.cpu().numpy()
     processed.append(preproc_img)
     return processed
 
@@ -59,7 +47,7 @@ class RawImagesDataset(Dataset):
         return len(self.img_files)
 
     def __getitem__(self, idx):
-        img = read_image(self.img_files[idx], False)
+        img = read_image(self.img_files[idx])
         processed_image = self.pipeline(img)
         return idx, processed_image
 
