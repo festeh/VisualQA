@@ -21,11 +21,11 @@ from src.utils.helpers import init_config, filter_config
 LOG_FORMAT = "%(asctime)s %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt='%H:%M:%S')
 
-DEBUGGING_MODE = environ.get("DEBUG_MODE") == 1
+DEBUGGING_MODE = int(environ.get("DEBUG_MODE", 0)) == 1
 if DEBUGGING_MODE:
     logging.info("Run was started in debugging mode: no info will be stored in mlflow or tensorboard")
 else:
-    logging.info("Run was started in normal mode: info will be stored in mlflow ans tensorboard")
+    logging.info("Run was started in normal mode: info will be stored in mlflow and tensorboard")
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
