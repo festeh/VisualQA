@@ -28,13 +28,13 @@ local emb_dir = "~/.embeddings/";
     },
     model: {
         emb_size: 300,
-        hidden_size: 512,
+        hidden_size: 1024,
         image_emb_size: 4096,
         n_classes: $.data.max_answers
     },
     training : {
-        n_epochs: 10,
-        lr: 1e-3,
+        n_epochs: 5,
+        lr: 5e-4,
         train_batch_size: 128,
         val_batch_size: 128
     },
