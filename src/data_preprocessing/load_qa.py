@@ -108,7 +108,7 @@ def preprocess_questions_answers(
         max_answers):
     train_data = preprocess_part_questions_answers(*read_questions_answers(train_questions, train_annotations),
                                                    max_answers=max_answers,
-                                                   only_one_word_answers=True)
+                                                   only_one_word_answers=False)
     val_data = preprocess_part_questions_answers(*read_questions_answers(val_questions, val_annotations),
                                                  max_answers=None, only_one_word_answers=False, flatten=True)
     save_qa_data(train_data, train_qa_result_file)
