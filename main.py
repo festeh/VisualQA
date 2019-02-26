@@ -1,5 +1,6 @@
 import logging
 from functools import partial
+from os import environ
 
 import torch
 from ignite.contrib.handlers import ProgressBar
@@ -18,10 +19,18 @@ from src.utils.datasets import VisualQAValDataset, VisualQATrainDataset, my_coll
 from src.utils.helpers import init_config, filter_config
 
 LOG_FORMAT = "%(asctime)s %(message)s"
-
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt='%H:%M:%S')
+
+DEBUGGING_MODE = environ.get("DEBUG_MODE") == 1
+if DEBUGGING_MODE:
+    logging.info("Run was started in debugging mode: no info will be stored in mlflow or tensorboard")
+else:
+    logging.info("Run was started in normal mode: info will be stored in mlflow ans tensorboard")
+
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logging.info(f"Using device: {device}")
+
 
 experiment_config = init_config()
 data_config = experiment_config.pop("data")
@@ -55,18 +64,18 @@ evaluator = create_supervised_evaluator(model, metrics={'accuracy': VisualQAAccu
 
 # create and add handlers
 run_avg = RunningAverage(output_transform=lambda x: x)
-pbar = ProgressBar(persist=False, bar_format=None)
-eval_handler = EvalHandler(evaluator=evaluator, data_loader=val_loader)
-tb_handler = TensorboardHandler(evaluator=evaluator)
-mlflow_handler = MlflowHandler(evaluator=evaluator)
-
 run_avg.attach(trainer, 'loss')
+pbar = ProgressBar(persist=False, bar_format=None)
 pbar.attach(trainer, ['loss'])
 pbar.attach(evaluator)
-# eval handler should come first
+eval_handler = EvalHandler(evaluator=evaluator, data_loader=val_loader)
 eval_handler.attach(trainer)
-tb_handler.attach(trainer)
-mlflow_handler.attach(trainer)
+if not DEBUGGING_MODE:
+    tb_handler = TensorboardHandler(evaluator=evaluator)
+    tb_handler.attach(trainer)
+    mlflow_handler = MlflowHandler(evaluator=evaluator)
+    mlflow_handler.attach(trainer)
+
 
 # finally run training process
 trainer.run(train_loader, max_epochs=training_config.pop("n_epochs"))
