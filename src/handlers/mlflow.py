@@ -7,7 +7,8 @@ from ignite.engine import Events, Engine
 
 
 class MlflowHandler:
-    def __init__(self, evaluator):
+    def __init__(self, experiment_name, evaluator):
+        self.experiment = mlflow.set_experiment(experiment_name)
         self.run = mlflow.start_run()
         self.evaluator = evaluator
 

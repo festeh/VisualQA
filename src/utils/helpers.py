@@ -21,3 +21,11 @@ def init_config(config_part: str = None, target_function: Callable = None):
     if target_function is None:
         return data_params
     return filter_config(data_params.as_dict(), target_function)
+
+
+def get_experiment_name() -> str:
+    from pygit2 import Repository
+    experiment_name = Repository('.').head.shorthand
+    if experiment_name == "master":
+        return "Default"
+    return experiment_name

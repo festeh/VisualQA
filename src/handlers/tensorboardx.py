@@ -5,9 +5,9 @@ from tensorboardX import SummaryWriter
 
 
 class TensorboardHandler:
-    def __init__(self, evaluator):
+    def __init__(self, experiment_name, evaluator):
         current_time = datetime.datetime.now().strftime('%b%d_%H-%M-%S')
-        self.log_dir = f'runs/{current_time}'
+        self.log_dir = f'runs/{current_time}_{experiment_name}'
 
         self.writer = SummaryWriter(log_dir=self.log_dir)
         self.evaluator = evaluator
