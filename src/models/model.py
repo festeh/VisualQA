@@ -6,7 +6,8 @@ import torch
 import numpy
 from allennlp.common import Params
 from allennlp.data import Vocabulary
-from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout, Tanh
+from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout, Tanh, LSTM
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -41,8 +42,12 @@ class BaselineModel(Module):
             if idx != 0:
                 emb_weights[idx] = saved_embs.get(word)
         self.embs.weight.data = torch.tensor(emb_weights)
-        self.question_to_hidden = Linear(self.emb_size, self.hidden_size)
+
+        self.seq_embedder = PytorchSeq2VecWrapper(
+            LSTM(input_size=self.emb_size, hidden_size=self.hidden_size, batch_first=True))
+
         self.image_to_hidden = Linear(self.image_emb_size, self.hidden_size)
+        self.question_to_hidden = Linear(self.hidden_size, self.hidden_size)
 
         self.hidden_to_hidden = Linear(self.hidden_size, self.hidden_size)
 
@@ -55,12 +60,8 @@ class BaselineModel(Module):
         question_embs = self.embs(questions_idxs)
         image_emb /= (image_emb ** 2 + 1e-6).sum(dim=1).sqrt().unsqueeze(1)
 
-        mask = (questions_idxs != 0).type(torch.float32).unsqueeze(2)
-        lengths = mask.sum(dim=1)
-        question_features = (question_embs * mask).sum(dim=1)
-        question_features /= lengths
-        question_features = question_embs.sum(dim=1)
-        question_features = question_features / (question_features ** 2 + 1e-6).sum(dim=1).sqrt().unsqueeze(1)
+        mask = (questions_idxs != 0).type(torch.float32)
+        question_features = self.seq_embedder(question_embs, mask)
 
         question_features = self.lrelu(self.question_to_hidden(question_features))
         image_emb = self.lrelu(self.image_to_hidden(image_emb))
