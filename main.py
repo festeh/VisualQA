@@ -16,7 +16,7 @@ from src.handlers.tensorboardx import TensorboardHandler
 from src.metrics import VisualQAAccuracy
 from src.models.model import BaselineModel
 from src.utils.datasets import VisualQAValDataset, VisualQATrainDataset, my_collate
-from src.utils.helpers import init_config, filter_config
+from src.utils.helpers import init_config, filter_config, get_experiment_name
 
 LOG_FORMAT = "%(asctime)s %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt='%H:%M:%S')
@@ -27,11 +27,10 @@ if DEBUGGING_MODE:
 else:
     logging.info("Run was started in normal mode: info will be stored in mlflow and tensorboard")
 
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logging.info(f"Using device: {device}")
 
-
+experiment_name = get_experiment_name()
 experiment_config = init_config()
 data_config = experiment_config.pop("data")
 training_config = experiment_config.pop("training")
@@ -71,9 +70,9 @@ pbar.attach(evaluator)
 eval_handler = EvalHandler(evaluator=evaluator, data_loader=val_loader)
 eval_handler.attach(trainer)
 if not DEBUGGING_MODE:
-    tb_handler = TensorboardHandler(evaluator=evaluator)
+    tb_handler = TensorboardHandler(experiment_name=experiment_name, evaluator=evaluator)
     tb_handler.attach(trainer)
-    mlflow_handler = MlflowHandler(evaluator=evaluator)
+    mlflow_handler = MlflowHandler(experiment_name=experiment_name, evaluator=evaluator)
     mlflow_handler.attach(trainer)
 
 
