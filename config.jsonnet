@@ -35,8 +35,10 @@ local emb_dir = "~/.embeddings/";
         n_classes: $.data.max_answers
     },
     training : {
-        n_epochs: 5,
-        lr: 5e-4,
+        n_epochs: 20,
+        lr: 5e-3,
+        lr_decay : 0.5,
+        lr_decay_step: 5,
         train_batch_size: 128,
         val_batch_size: 128
     },
