@@ -11,6 +11,7 @@ local emb_dir = "~/.embeddings/";
         val_questions: dr + "v2_OpenEnded_mscoco_val2014_questions.json",
         train_qa_result_file: sav_dir + "qa_train.pkl",
         val_qa_result_file: sav_dir + "qa_val.pkl",
+        answer_vocab_result_file: sav_dir + "answer_vocab.json",
         max_answers: 1000,
         # image
         train_images: dr + "train2014",
