@@ -1,5 +1,7 @@
 import json
 import logging
+import pickle
+from collections import Counter
 from pathlib import Path
 from typing import List, Union, Dict, Tuple
 import numpy as np
@@ -30,87 +32,83 @@ def read_questions_answers(questions_path, answers_path) -> Tuple[List, List]:
 
 def preprocess_part_questions_answers(
         questions: List,
-        annotations: List,
-        max_answers=None,
-        only_one_word_answers=True,
-        flatten=False) -> DataFrame:
+        annotations: List) -> List:
     data = []
     id_to_question = {q['question_id']: q for q in questions}
     for ann in tqdm(annotations):
         question_info = id_to_question[ann['question_id']]
-        preprocessed_question = preprocess_text(question_info["question"])
+        question_id = question_info["question_id"]
         img_id = question_info["image_id"]
+        question_text = question_info["question"]
+        preprocessed_question = preprocess_text(question_text)
 
-        confident_answers = [preprocess_text(ans["answer"]) for ans in ann["answers"]
-                             if ans["answer_confidence"] != "no"]
-        datum = {"question": question_info["question"],
+        datum = {"question": question_text,
                  "preprocessed_question": preprocessed_question,
-                 "question_id": question_info["question_id"],
+                 "question_id": question_id,
                  "image_id": img_id}
-        if not flatten:
-            for ans in confident_answers:
-                data.append({**datum, "answer": ans})
-        else:
-            data.append({**datum, **{"answer": [ans for ans in confident_answers]}})
-    data = DataFrame(data)
 
-    # TODO: in future consider all (lost ~200k examples from 2mil)
-    if only_one_word_answers:
-        allowed_answers_idx = data["answer"].str.split().str.len() == 1
-        data = data[allowed_answers_idx]
+        all_answers = ann["answers"]
+        confident_answers = [preprocess_text(ans["answer"]) for ans in all_answers
+                             if ans["answer_confidence"] != "no"]
 
-    if max_answers is not None:
-        allowed_answers = data["answer"].value_counts()[:max_answers]
-        data = data[data.answer.isin(allowed_answers.index)]
-
+        datum["answers"] = confident_answers
+        data.append(datum)
     return data
 
 
-def process_part_qa_data(data_path: Union[Path, str], data_type='train', max_answers=None):
-    logging.info(f"Reading {data_type} data part")
-    q, a = read_questions_answers(data_path, data_type)
-    if data_type == "train":
-        return preprocess_questions_answers(q, a, max_answers=max_answers, flatten=False)
-    else:
-        return preprocess_questions_answers(
-            q, a, max_answers=None, flatten=True, only_one_word_answers=False)
+def filter_qa_pairs(qa_data, max_question_length=None, max_answers=None, answer_vocab_result_file=None):
+    """Select only QA pairs in which annotators were more or less confident"""
+    logging.info(f"Filtering data")
+    if max_answers is not None:
+        logging.info(f"Using only {max_answers} possible answers")
+        answer_counts = Counter()
+        # build and save answer vocab
+        for qa in qa_data:
+            answer_counts.update(qa["answers"])
+        allowed_answers = [ans for ans, _ in answer_counts.most_common(max_answers)]
+        with open(answer_vocab_result_file, "w") as f:
+            json.dump(allowed_answers, f)
+        # filter answers
+        allowed_answers = set(allowed_answers)
+        for qa in qa_data:
+            qa["answers"] = [ans for ans in qa["answers"] if ans in allowed_answers]
+
+    return qa_data
 
 
 def save_qa_data(data, save_data_path):
     save_data_path = Path(save_data_path)
     if not save_data_path.parent.exists():
         save_data_path.parent.mkdir(parents=True)
-    data.to_pickle(save_data_path)
+    with save_data_path.open("wb") as f:
+        pickle.dump(data, f)
 
 
-def filter_qa_pairs(qa: List[Dict], removed=("no",)):
-    """Select only QA pairs in which annotators were more or less confident"""
-    return [elem for elem in qa if elem["confidence"] not in removed]
-
-
-def sample_examples(qa: List[Dict], img_path: Path, n_examples):
-    """Firstly, randomly selects questions-answer pairs, then obtains corresponding images"""
-    from src.data_preprocessing.load_images import read_image
-    idxs = np.random.choice(len(qa), n_examples)
-    if isinstance(qa, DataFrame):
-        qs = [elem[1] for elem in qa.iloc[idxs].iterrows()]
-        imgs = [read_image(img_path, id_['image_id'], True) for id_ in qs]
-    else:
-        qs = [qa[idx] for idx in idxs]
-        imgs = [read_image(img_path, q['image_id'], True) for q in qs]
-    return imgs, qs
+# def sample_examples(qa: List[Dict], img_path: Path, n_examples):
+#     """Firstly, randomly selects questions-answer pairs, then obtains corresponding images"""
+#     from src.data_preprocessing.load_images import read_image
+#     idxs = np.random.choice(len(qa), n_examples)
+#     if isinstance(qa, DataFrame):
+#         qs = [elem[1] for elem in qa.iloc[idxs].iterrows()]
+#         imgs = [read_image(img_path, id_['image_id'], True) for id_ in qs]
+#     else:
+#         qs = [qa[idx] for idx in idxs]
+#         imgs = [read_image(img_path, q['image_id'], True) for q in qs]
+#     return imgs, qs
 
 
 def preprocess_questions_answers(
         train_annotations, val_annotations,
         train_questions, val_questions,
         train_qa_result_file, val_qa_result_file,
+        answer_vocab_result_file,
         max_answers):
-    train_data = preprocess_part_questions_answers(*read_questions_answers(train_questions, train_annotations),
-                                                   max_answers=max_answers,
-                                                   only_one_word_answers=False)
-    val_data = preprocess_part_questions_answers(*read_questions_answers(val_questions, val_annotations),
-                                                 max_answers=None, only_one_word_answers=False, flatten=True)
+    train_data = preprocess_part_questions_answers(*read_questions_answers(train_questions, train_annotations))
+    val_data = preprocess_part_questions_answers(*read_questions_answers(val_questions, val_annotations))
+    train_data = filter_qa_pairs(
+        train_data,
+        max_answers=max_answers,
+        answer_vocab_result_file=answer_vocab_result_file)
     save_qa_data(train_data, train_qa_result_file)
     save_qa_data(val_data, val_qa_result_file)
 
