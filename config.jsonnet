@@ -36,7 +36,7 @@ local emb_dir = "~/.embeddings/";
     },
     training : {
         n_epochs: 20,
-        lr: 5e-3,
+        lr: 5e-4,
         lr_decay : 0.5,
         lr_decay_step: 5,
         train_batch_size: 128,

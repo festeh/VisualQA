@@ -7,7 +7,7 @@ import numpy
 from allennlp.common import Params
 from allennlp.data import Vocabulary
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
-from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout, Tanh, LSTM, BatchNorm1d, LayerNorm
+from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout, Tanh, LSTM, BatchNorm1d, LayerNorm, GRU
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -47,10 +47,10 @@ class BaselineModel(Module):
             LSTM(
                 input_size=self.emb_size,
                 hidden_size=self.hidden_size,
-                batch_first=True, bidirectional=True))
+                batch_first=True, bidirectional=False))
 
         self.image_to_hidden = Linear(self.image_emb_size, self.hidden_size)
-        self.question_to_hidden = Linear(2 * self.hidden_size, self.hidden_size)
+        self.question_to_hidden = Linear(self.hidden_size, self.hidden_size)
 
         self.hidden_to_hidden = Linear(self.hidden_size, self.hidden_size)
 
@@ -58,14 +58,14 @@ class BaselineModel(Module):
         self.lrelu = LeakyReLU()
 
         self.lnimg = LayerNorm(self.image_emb_size)
-        self.lnq = LayerNorm(self.hidden_size * 2)
+        self.lnq = LayerNorm(self.hidden_size)
 
         self.dropout = Dropout(p=config.pop("dropout_rate"))
 
     def forward(self, inputs):
         questions_idxs, image_emb = inputs
         question_embs = self.embs(questions_idxs)
-        # image_emb /= (image_emb ** 2 + 1e-6).sum(dim=1).sqrt().unsqueeze(1)
+        # image_emb /= ((image_emb ** 2).sum(dim=1).sqrt() + 1e-3).unsqueeze(1)
         mask = (questions_idxs != 0).type(torch.float32)
         question_features = self.seq_embedder(question_embs, mask)
         question_features = self.lnq(question_features)
