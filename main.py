@@ -3,11 +3,12 @@ from functools import partial
 from os import environ
 
 import torch
-from ignite.contrib.handlers import ProgressBar
-from ignite.engine import create_supervised_trainer, create_supervised_evaluator
+from ignite.contrib.handlers import ProgressBar, LRScheduler
+from ignite.engine import create_supervised_trainer, create_supervised_evaluator, Events
 from ignite.metrics import RunningAverage
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 
 from src.handlers.eval import EvalHandler
@@ -56,7 +57,7 @@ model = BaselineModel(
     vocab=vocab)
 
 optimizer = Adam(model.parameters(), training_config.pop("lr"))
-loss = CrossEntropyLoss()
+loss = BCEWithLogitsLoss()
 
 trainer = create_supervised_trainer(model, optimizer, loss, device=device)
 evaluator = create_supervised_evaluator(model, metrics={'accuracy': VisualQAAccuracy()}, device=device)
