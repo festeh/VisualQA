@@ -67,7 +67,8 @@ def filter_qa_pairs(qa_data, max_question_length=None, max_answers=None, answer_
             answer_counts.update(qa["answers"])
         allowed_answers = [ans for ans, _ in answer_counts.most_common(max_answers)]
         with open(answer_vocab_result_file, "w") as f:
-            json.dump(allowed_answers, f)
+            answer_vocab = {ans: idx for idx, ans in enumerate(allowed_answers)}
+            json.dump(answer_vocab, f)
         # filter answers
         allowed_answers = set(allowed_answers)
         for qa in qa_data:
