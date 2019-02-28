@@ -53,8 +53,7 @@ class BaselineModel(Module):
     def forward(self, inputs):
         questions_idxs, image_emb = inputs
         question_embs = self.embs(questions_idxs)
-        image_emb /= (image_emb ** 2 + 1e-6).sum(dim=1).sqrt().unsqueeze(1)
-
+        image_emb /= ((image_emb ** 2).sum(dim=1).sqrt() + 1e-6).unsqueeze(1)
         mask = (questions_idxs != 0).type(torch.float32).unsqueeze(2)
         lengths = mask.sum(dim=1)
         question_features = (question_embs * mask).sum(dim=1)
