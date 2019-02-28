@@ -1,4 +1,5 @@
 import json
+import pickle
 import re
 from functools import partial
 
@@ -26,7 +27,9 @@ class VisualQADataset(Dataset):
     def init_common(self, images_result_file,
                     qa_result_file,
                     filenames_result_file):
-        self.qa = pd.read_pickle(qa_result_file)
+        import json
+        with open(qa_result_file, "rb") as f:
+            self.qa = pickle.load(f)
         with open(filenames_result_file) as f:
             image_filenames = json.load(f)
         image_ids = [self._exctract_img_id(f) for f in image_filenames]
@@ -53,6 +56,7 @@ class VisualQATrainDataset(VisualQADataset):
             train_images_result_file,
             train_qa_result_file,
             train_filenames_result_file,
+            answer_vocab_result_file,
             vocab_result_file):
         super().__init__()
         self.init_common(
@@ -61,15 +65,24 @@ class VisualQATrainDataset(VisualQADataset):
             images_result_file=train_images_result_file)
         self.vocab = Vocabulary()
         self.vocab.set_from_file(filename=vocab_result_file, oov_token="[UNK]")
-        possible_answers = self.qa.answer.value_counts()
-        self.answer_vocabulary = {ans: idx for idx, ans in enumerate(possible_answers.index)}
+        with open(answer_vocab_result_file) as f:
+            self.answer_vocabulary = json.load(f)
 
     def __getitem__(self, idx):
-        info = self.qa.iloc[idx]
-        answer = info['answer']
+        info = self.qa[idx]
+        answers = [self.answer_vocabulary[ans] for ans in info['answers']]
         image = self.preprocessed_imgs[self.image_id_to_index[info['image_id']]]
         question = self.text_to_instance(info["preprocessed_question"])
-        return question, image, self.answer_vocabulary[answer]
+
+        answers_soft_scores = numpy.zeros(len(self.answer_vocabulary), dtype=numpy.float32)
+        unique_answers, answer_counts = numpy.unique(answers, return_counts=True)
+        answer_counts = answer_counts.astype(numpy.float32)
+        answer_counts /= 3
+        answer_counts[answer_counts > 1] = 1
+        for answer_idx, count in zip(unique_answers, answer_counts):
+            answers_soft_scores[answer_idx] += count
+
+        return question, image, answers_soft_scores
 
 
 class VisualQAValDataset(VisualQADataset):
@@ -90,8 +103,8 @@ class VisualQAValDataset(VisualQADataset):
         self.answer_vocabulary = answer_vocabulary
 
     def __getitem__(self, idx):
-        info = self.qa.iloc[idx]
-        answers = info['answer']
+        info = self.qa[idx]
+        answers = info['answers']
         answer_idxs = [self.answer_vocabulary.get(ans, -1) for ans in answers]
         if len(answer_idxs) < 10:
             answer_idxs = answer_idxs + [-1] * (10 - len(answer_idxs))
