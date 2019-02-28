@@ -70,6 +70,12 @@ pbar.attach(trainer, ['loss'])
 pbar.attach(evaluator)
 eval_handler = EvalHandler(evaluator=evaluator, data_loader=val_loader)
 eval_handler.attach(trainer)
+
+scheduler = LRScheduler(StepLR(
+    optimizer=optimizer,
+    step_size=training_config.pop("lr_decay_step"),
+    gamma=training_config.pop("lr_decay")))
+trainer.add_event_handler(Events.EPOCH_COMPLETED, scheduler)
 if not DEBUGGING_MODE:
     run_name = environ.get("RUN_NAME", "NOTSET")
     tb_handler = TensorboardHandler(experiment_name=experiment_name, evaluator=evaluator)
