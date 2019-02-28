@@ -70,9 +70,10 @@ pbar.attach(evaluator)
 eval_handler = EvalHandler(evaluator=evaluator, data_loader=val_loader)
 eval_handler.attach(trainer)
 if not DEBUGGING_MODE:
+    run_name = environ.get("RUN_NAME", "NOTSET")
     tb_handler = TensorboardHandler(experiment_name=experiment_name, evaluator=evaluator)
     tb_handler.attach(trainer)
-    mlflow_handler = MlflowHandler(experiment_name=experiment_name, evaluator=evaluator)
+    mlflow_handler = MlflowHandler(run_name=run_name, experiment_name=experiment_name, evaluator=evaluator)
     mlflow_handler.attach(trainer)
 
 
