@@ -6,7 +6,7 @@ import torch
 import numpy
 from allennlp.common import Params
 from allennlp.data import Vocabulary
-from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout, Tanh
+from torch.nn import Module, Linear, Embedding, LeakyReLU, Dropout
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
