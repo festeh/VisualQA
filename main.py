@@ -15,7 +15,7 @@ from src.handlers.eval import EvalHandler
 from src.handlers.mlflow import MlflowHandler
 from src.handlers.tensorboardx import TensorboardHandler
 from src.metrics import VisualQAAccuracy
-from src.models.model import BaselineModel
+from src.models.model import VQAModel
 from src.utils.datasets import VisualQAValDataset, VisualQATrainDataset, my_collate
 from src.utils.helpers import init_config, filter_config, get_experiment_name
 
@@ -51,7 +51,7 @@ val_loader = DataLoader(
     val_dataset, batch_size=training_config.pop("val_batch_size"),
     shuffle=False, collate_fn=partial(my_collate, vocab=vocab), num_workers=6)
 
-model = BaselineModel(
+model = VQAModel(
     config=experiment_config.pop("model"),
     embeddings_result_file=data_config.get("embeddings_result_file"),
     vocab=vocab)

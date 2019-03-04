@@ -16,9 +16,9 @@ local emb_dir = "~/.embeddings/";
         # image
         train_images: dr + "train2014",
         val_images: dr + "val2014",
-        train_images_result_file: sav_dir + "train_images.hdf5",
+        train_images_result_file: sav_dir + "train_images_faster_rcnn.hdf5",
         train_filenames_result_file: sav_dir + "train_filenames.json",
-        val_images_result_file: sav_dir + "val_images.hdf5",
+        val_images_result_file: sav_dir + "val_images_faster_rcnn.hdf5",
         val_filenames_result_file: sav_dir + "val_filenames.json",
         # vocab
         vocab_result_file: sav_dir + "vocab.txt",
@@ -31,7 +31,8 @@ local emb_dir = "~/.embeddings/";
         emb_size: 300,
         hidden_size: 1024,
         dropout_rate: 0.1,
-        image_emb_size: 4096,
+        image_emb_size: 2048,
+        n_image_features: 36,
         n_classes: $.data.max_answers
     },
     training : {
